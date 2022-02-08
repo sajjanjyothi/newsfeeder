@@ -10,6 +10,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -24,6 +25,15 @@ import (
 const (
 	BasicAuthScopes = "BasicAuth.Scopes"
 )
+
+// UpdatenewsurlJSONBody defines parameters for Updatenewsurl.
+type UpdatenewsurlJSONBody struct {
+	Category *string `json:"category,omitempty"`
+	Url      *string `json:"url,omitempty"`
+}
+
+// UpdatenewsurlJSONRequestBody defines body for Updatenewsurl for application/json ContentType.
+type UpdatenewsurlJSONRequestBody UpdatenewsurlJSONBody
 
 // RequestEditorFn  is the function signature for the RequestEditor callback function
 type RequestEditorFn func(ctx context.Context, req *http.Request) error
@@ -98,8 +108,52 @@ func WithRequestEditorFn(fn RequestEditorFn) ClientOption {
 
 // The interface specification for the client above.
 type ClientInterface interface {
+	// Updatenewsurl request with any body
+	UpdatenewsurlWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	Updatenewsurl(ctx context.Context, body UpdatenewsurlJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error)
+
+	// Geturls request
+	Geturls(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error)
+
 	// Getnewsbycategory request
 	Getnewsbycategory(ctx context.Context, category string, reqEditors ...RequestEditorFn) (*http.Response, error)
+}
+
+func (c *Client) UpdatenewsurlWithBody(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatenewsurlRequestWithBody(c.Server, contentType, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Updatenewsurl(ctx context.Context, body UpdatenewsurlJSONRequestBody, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewUpdatenewsurlRequest(c.Server, body)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
+}
+
+func (c *Client) Geturls(ctx context.Context, reqEditors ...RequestEditorFn) (*http.Response, error) {
+	req, err := NewGeturlsRequest(c.Server)
+	if err != nil {
+		return nil, err
+	}
+	req = req.WithContext(ctx)
+	if err := c.applyEditors(ctx, req, reqEditors); err != nil {
+		return nil, err
+	}
+	return c.Client.Do(req)
 }
 
 func (c *Client) Getnewsbycategory(ctx context.Context, category string, reqEditors ...RequestEditorFn) (*http.Response, error) {
@@ -112,6 +166,73 @@ func (c *Client) Getnewsbycategory(ctx context.Context, category string, reqEdit
 		return nil, err
 	}
 	return c.Client.Do(req)
+}
+
+// NewUpdatenewsurlRequest calls the generic Updatenewsurl builder with application/json body
+func NewUpdatenewsurlRequest(server string, body UpdatenewsurlJSONRequestBody) (*http.Request, error) {
+	var bodyReader io.Reader
+	buf, err := json.Marshal(body)
+	if err != nil {
+		return nil, err
+	}
+	bodyReader = bytes.NewReader(buf)
+	return NewUpdatenewsurlRequestWithBody(server, "application/json", bodyReader)
+}
+
+// NewUpdatenewsurlRequestWithBody generates requests for Updatenewsurl with any type of body
+func NewUpdatenewsurlRequestWithBody(server string, contentType string, body io.Reader) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/newsfeeder/v1/news")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("PUT", queryURL.String(), body)
+	if err != nil {
+		return nil, err
+	}
+
+	req.Header.Add("Content-Type", contentType)
+
+	return req, nil
+}
+
+// NewGeturlsRequest generates requests for Geturls
+func NewGeturlsRequest(server string) (*http.Request, error) {
+	var err error
+
+	serverURL, err := url.Parse(server)
+	if err != nil {
+		return nil, err
+	}
+
+	operationPath := fmt.Sprintf("/api/newsfeeder/v1/news/urls")
+	if operationPath[0] == '/' {
+		operationPath = "." + operationPath
+	}
+
+	queryURL, err := serverURL.Parse(operationPath)
+	if err != nil {
+		return nil, err
+	}
+
+	req, err := http.NewRequest("GET", queryURL.String(), nil)
+	if err != nil {
+		return nil, err
+	}
+
+	return req, nil
 }
 
 // NewGetnewsbycategoryRequest generates requests for Getnewsbycategory
@@ -191,8 +312,59 @@ func WithBaseURL(baseURL string) ClientOption {
 
 // ClientWithResponsesInterface is the interface specification for the client with responses above.
 type ClientWithResponsesInterface interface {
+	// Updatenewsurl request with any body
+	UpdatenewsurlWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatenewsurlResponse, error)
+
+	UpdatenewsurlWithResponse(ctx context.Context, body UpdatenewsurlJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatenewsurlResponse, error)
+
+	// Geturls request
+	GeturlsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GeturlsResponse, error)
+
 	// Getnewsbycategory request
 	GetnewsbycategoryWithResponse(ctx context.Context, category string, reqEditors ...RequestEditorFn) (*GetnewsbycategoryResponse, error)
+}
+
+type UpdatenewsurlResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+}
+
+// Status returns HTTPResponse.Status
+func (r UpdatenewsurlResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r UpdatenewsurlResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
+}
+
+type GeturlsResponse struct {
+	Body         []byte
+	HTTPResponse *http.Response
+	JSON200      *[]map[string]interface{}
+}
+
+// Status returns HTTPResponse.Status
+func (r GeturlsResponse) Status() string {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.Status
+	}
+	return http.StatusText(0)
+}
+
+// StatusCode returns HTTPResponse.StatusCode
+func (r GeturlsResponse) StatusCode() int {
+	if r.HTTPResponse != nil {
+		return r.HTTPResponse.StatusCode
+	}
+	return 0
 }
 
 type GetnewsbycategoryResponse struct {
@@ -217,6 +389,32 @@ func (r GetnewsbycategoryResponse) StatusCode() int {
 	return 0
 }
 
+// UpdatenewsurlWithBodyWithResponse request with arbitrary body returning *UpdatenewsurlResponse
+func (c *ClientWithResponses) UpdatenewsurlWithBodyWithResponse(ctx context.Context, contentType string, body io.Reader, reqEditors ...RequestEditorFn) (*UpdatenewsurlResponse, error) {
+	rsp, err := c.UpdatenewsurlWithBody(ctx, contentType, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatenewsurlResponse(rsp)
+}
+
+func (c *ClientWithResponses) UpdatenewsurlWithResponse(ctx context.Context, body UpdatenewsurlJSONRequestBody, reqEditors ...RequestEditorFn) (*UpdatenewsurlResponse, error) {
+	rsp, err := c.Updatenewsurl(ctx, body, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseUpdatenewsurlResponse(rsp)
+}
+
+// GeturlsWithResponse request returning *GeturlsResponse
+func (c *ClientWithResponses) GeturlsWithResponse(ctx context.Context, reqEditors ...RequestEditorFn) (*GeturlsResponse, error) {
+	rsp, err := c.Geturls(ctx, reqEditors...)
+	if err != nil {
+		return nil, err
+	}
+	return ParseGeturlsResponse(rsp)
+}
+
 // GetnewsbycategoryWithResponse request returning *GetnewsbycategoryResponse
 func (c *ClientWithResponses) GetnewsbycategoryWithResponse(ctx context.Context, category string, reqEditors ...RequestEditorFn) (*GetnewsbycategoryResponse, error) {
 	rsp, err := c.Getnewsbycategory(ctx, category, reqEditors...)
@@ -224,6 +422,48 @@ func (c *ClientWithResponses) GetnewsbycategoryWithResponse(ctx context.Context,
 		return nil, err
 	}
 	return ParseGetnewsbycategoryResponse(rsp)
+}
+
+// ParseUpdatenewsurlResponse parses an HTTP response from a UpdatenewsurlWithResponse call
+func ParseUpdatenewsurlResponse(rsp *http.Response) (*UpdatenewsurlResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &UpdatenewsurlResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	return response, nil
+}
+
+// ParseGeturlsResponse parses an HTTP response from a GeturlsWithResponse call
+func ParseGeturlsResponse(rsp *http.Response) (*GeturlsResponse, error) {
+	bodyBytes, err := ioutil.ReadAll(rsp.Body)
+	defer func() { _ = rsp.Body.Close() }()
+	if err != nil {
+		return nil, err
+	}
+
+	response := &GeturlsResponse{
+		Body:         bodyBytes,
+		HTTPResponse: rsp,
+	}
+
+	switch {
+	case strings.Contains(rsp.Header.Get("Content-Type"), "json") && rsp.StatusCode == 200:
+		var dest []map[string]interface{}
+		if err := json.Unmarshal(bodyBytes, &dest); err != nil {
+			return nil, err
+		}
+		response.JSON200 = &dest
+
+	}
+
+	return response, nil
 }
 
 // ParseGetnewsbycategoryResponse parses an HTTP response from a GetnewsbycategoryWithResponse call
@@ -254,6 +494,12 @@ func ParseGetnewsbycategoryResponse(rsp *http.Response) (*GetnewsbycategoryRespo
 
 // ServerInterface represents all server handlers.
 type ServerInterface interface {
+	// update news url against category
+	// (PUT /api/newsfeeder/v1/news)
+	Updatenewsurl(ctx echo.Context) error
+	// Get news url for each category
+	// (GET /api/newsfeeder/v1/news/urls)
+	Geturls(ctx echo.Context) error
 	// Get all news by category (uk/technology)
 	// (GET /api/newsfeeder/v1/news/{category})
 	Getnewsbycategory(ctx echo.Context, category string) error
@@ -262,6 +508,28 @@ type ServerInterface interface {
 // ServerInterfaceWrapper converts echo contexts to parameters.
 type ServerInterfaceWrapper struct {
 	Handler ServerInterface
+}
+
+// Updatenewsurl converts echo context to params.
+func (w *ServerInterfaceWrapper) Updatenewsurl(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.Updatenewsurl(ctx)
+	return err
+}
+
+// Geturls converts echo context to params.
+func (w *ServerInterfaceWrapper) Geturls(ctx echo.Context) error {
+	var err error
+
+	ctx.Set(BasicAuthScopes, []string{""})
+
+	// Invoke the callback with all the unmarshalled arguments
+	err = w.Handler.Geturls(ctx)
+	return err
 }
 
 // Getnewsbycategory converts echo context to params.
@@ -310,6 +578,8 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 		Handler: si,
 	}
 
+	router.PUT(baseURL+"/api/newsfeeder/v1/news", wrapper.Updatenewsurl)
+	router.GET(baseURL+"/api/newsfeeder/v1/news/urls", wrapper.Geturls)
 	router.GET(baseURL+"/api/newsfeeder/v1/news/:category", wrapper.Getnewsbycategory)
 
 }
@@ -317,13 +587,15 @@ func RegisterHandlersWithBaseURL(router EchoRouter, si ServerInterface, baseURL 
 // Base64 encoded, gzipped, json marshaled Swagger object
 var swaggerSpec = []string{
 
-	"H4sIAAAAAAAC/4RSsa6cMBD8FbRVIlnAe+/S0CVNlDoN0onCmD3wBWzHXi6ykP89WgPSXfUq2+Pxrmdm",
-	"N1B2cdagoQDNBgHV6jXF32rCBTP0Qwatvq805fuMQwM9oyCAouPjROQgpSRAm5tlJmma+cbgv3BDHEDA",
-	"A33Q1kADb2Vd1pAEWIdGOg0NfJR1+QECnKQp962k09X5Gn31eMunalOScLQ+JmaNSLxYh16StubXAA38",
-	"RGJqH08qCPAYnDVh1/Re17woawhNLiCdm7XKJap74E8eYiXvNOGSHx5ybX9HRSzgAKT3Mu4GDBiU1452",
-	"pe91XZytmX9pW67zSrq07Qvp2+ekJCCsyyJ93PUWcp4LFl30sThlF1/WPxWhmoyd7Ri/cl5yDNBccyzQ",
-	"JfbbywUJPcMbaG7FGYAAI3PULyb+XbXHARryK4onhw4fAnltRkipyz88pilXfpqja5e69D8AAP//nh9u",
-	"BXsCAAA=",
+	"H4sIAAAAAAAC/9yUzW7bMAzHX8XgaQOE2P3Yxbf1Uuw8DAhQ5MDYjK3WllSJ6mYYeveB8pymS/eBXQb0",
+	"EkXkn6T4Y8IZGjs6a8hwgHqGQE30mqfPTU8jZdMNBt18jNxnf7ZDDXuxggKenFx7ZgcpJQXaHKwoWfMg",
+	"HkNfw4GoBQVP5IO2Bmq42FSbCpIC68ig01DD1abaXIECh9znuiU6Xa7R5Muni3wTl4ssh3XkkbU1n1qo",
+	"4YtrkUkk0Q+gwNNjpMA3tp1E3FjDZHIcOjfoJkeW90Ee9KMxlG/0DUcnT5+hQabO+glqiA+gQBLX+TMp",
+	"cF7qs14oPUvnlUlgr00n0hx3Zk9HenZ/Tw0LvyTvDs6asKS9rCo5WgqN144XepdVVawqSX+93Z6Lrrfb",
+	"F6IPfxYlBSGOIy4NZ5yF8CyiHwrsUJvAxbFRBYxdgPoujxh2Ev6LmZXRD7mdjl4Z3C1x9r/e+l/PTTON",
+	"4QTzCvVIGb3HafmR/geet8TPMA/WF4RN/2805zUq/Y6pSPfTSYG3TheHYSG8n45ci3fxoWRqemMH203v",
+	"zznLxvE4EpMX8wxaSskWAgUG87J7AfExak8t1OwjqRNCP/+78wjXfZozn2zSu13ape8BAAD//8+yUy19",
+	"BQAA",
 }
 
 // GetSwagger returns the content of the embedded swagger specification file

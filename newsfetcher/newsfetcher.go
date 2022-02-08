@@ -9,8 +9,8 @@ import (
 )
 
 //testable interface
-type NewsFatcher interface {
-	GetFeeds(URL string) (string, error)
+type NewsFetcher interface {
+	GetFeed(URL string) ([]*gofeed.Item, error)
 }
 type newsfetcher struct {
 	env *envloader.ENV

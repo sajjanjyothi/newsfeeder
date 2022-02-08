@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	echo "github.com/labstack/echo/v4"
+	"github.com/labstack/echo/v4/middleware"
 	"github.com/sajjanjyothi/ziglunews/envloader"
 	"github.com/sajjanjyothi/ziglunews/newsfeeder"
 	"github.com/sajjanjyothi/ziglunews/newsservice"
@@ -12,7 +13,7 @@ import (
 )
 
 const (
-	TECHNOLOGY_URL = "https://feeds.skynews.com/feeds/rss/technology.xml"
+	TECHNOLOGY_URL = "http://feeds.bbci.co.uk/news/technology/rss.xml"
 	UK_URL         = "http://feeds.bbci.co.uk/news/uk/rss.xml"
 )
 
@@ -46,7 +47,9 @@ func main() {
 	}
 	newsService := newsservice.New(&env)
 	e := echo.New()
-
+	e.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
+		return key == env.NewsFedderToken, nil
+	}))
 	newsfeeder.RegisterHandlers(e, newsService)
 	log.Info("Web server starting")
 	log.Fatal(e.Start(":" + env.ServicePort))

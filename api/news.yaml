@@ -10,6 +10,28 @@ components:
 security:
 - BasicAuth: []
 paths:
+  /api/newsfeeder/v1/news/urls:
+    get:
+      tags: ["news"]
+      operationId: geturls
+      summary: "Get news url for each category"
+      responses:
+          '200':
+            description: |-
+              200 response
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    type: object
+          '4XX':
+            description: |-
+              4XX response
+          '5XX':
+            description: |-
+              4XX response
+
   /api/newsfeeder/v1/news/{category}:
     parameters:
       -   name: category
@@ -31,6 +53,34 @@ paths:
                   type: array
                   items:
                     type: object
+          '4XX':
+            description: |-
+              4XX response
+          '5XX':
+            description: |-
+              4XX response
+  /api/newsfeeder/v1/news:
+    put:
+      tags: ["news"]
+      operationId: updatenewsurl
+      summary: "update news url against category"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                category: 
+                  type: string
+                url:
+                  type: string 
+              example:
+                category : uk
+                url: url
+      responses:
+          '200':
+            description: |-
+              200 response
           '4XX':
             description: |-
               4XX response

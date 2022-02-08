@@ -11,6 +11,11 @@ type RedisHelper struct {
 	connection redis.Conn
 }
 
+type URLS struct {
+	Category string
+	URL      string
+}
+
 func New(env *envloader.ENV) *RedisHelper {
 
 	c, err := redis.Dial("tcp", env.RedisURL+":6379", redis.DialPassword(env.RedisPassword))
@@ -36,4 +41,18 @@ func (redishelper *RedisHelper) GetValue(key string) (string, error) {
 
 func (redishelper *RedisHelper) Close() error {
 	return redishelper.connection.Close()
+}
+
+func (redishelper *RedisHelper) GetAll() ([]URLS, error) {
+	categories := []string{"uk", "technology"}
+	urls := make([]URLS, 0)
+
+	for _, category := range categories {
+		url, _ := redishelper.GetValue(category)
+		urls = append(urls, URLS{
+			Category: category,
+			URL:      url,
+		})
+	}
+	return urls, nil
 }

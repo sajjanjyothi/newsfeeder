@@ -18,5 +18,6 @@ services:
       - SERVICE_PORT=30005
       - REDIS_URL=cache
       - REDIS_PASSWORD=emlnbHUK
+      - NEWS_TOKEN=ziglu
     depends_on:
       - cache
