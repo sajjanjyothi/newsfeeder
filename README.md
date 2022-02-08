@@ -20,6 +20,13 @@ To get technology news
 ```
 curl -X GET http://127.0.0.1:30005/api/newsfeeder/v1/news/technology   -H "Authorization: Bearer ziglu" -H 'accept: application/json' 
 ```
+
+To get uk news 
+
+```
+curl -X GET http://127.0.0.1:30005/api/newsfeeder/v1/news/uk  -H "Authorization: Bearer ziglu" -H 'accept: application/json' 
+```
+
 To get all configured urls for categories
 ```
 curl -X GET http://127.0.0.1:30005/api/newsfeeder/v1/news/urls   -H "Authorization: Bearer ziglu" -H 'accept: application/json'
