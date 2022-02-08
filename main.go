@@ -1,12 +1,36 @@
 package main
 
 import (
+	"errors"
+
 	echo "github.com/labstack/echo/v4"
 	"github.com/sajjanjyothi/ziglunews/envloader"
 	"github.com/sajjanjyothi/ziglunews/newsfeeder"
 	"github.com/sajjanjyothi/ziglunews/newsservice"
+	"github.com/sajjanjyothi/ziglunews/redishelper"
 	log "github.com/sirupsen/logrus"
 )
+
+const (
+	TECHNOLOGY_URL = "https://feeds.skynews.com/feeds/rss/technology.xml"
+	UK_URL         = "http://feeds.bbci.co.uk/news/uk/rss.xml"
+)
+
+func setInitialURLs(env *envloader.ENV) error {
+	redis := redishelper.New(env)
+	if redis == nil {
+		return errors.New("redis connection failed")
+	}
+	defer redis.Close()
+	if err := redis.SetValue("uk", UK_URL); err != nil {
+		return err
+	}
+
+	if err := redis.SetValue("technology", TECHNOLOGY_URL); err != nil {
+		return err
+	}
+	return nil
+}
 
 func main() {
 
@@ -17,7 +41,10 @@ func main() {
 		panic(err)
 	}
 
-	newsService := &newsservice.NewsService{}
+	if err := setInitialURLs(&env); err != nil {
+		panic(err)
+	}
+	newsService := newsservice.New(&env)
 	e := echo.New()
 
 	newsfeeder.RegisterHandlers(e, newsService)

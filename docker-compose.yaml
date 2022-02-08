@@ -2,14 +2,12 @@
 version: "3.9"
    
 services:
-  db:
-    image: postgres
-    environment:
-      - POSTGRES_PASSWORD=postgres
-    healthcheck:
-      test: "pg_isready --username=postgres && psql --username=postgres --list"
-      timeout: 10s
-      retries: 20
+  cache:
+    image: redis:6.2-alpine
+    restart: always
+    ports:
+      - '6379:6379'
+    command: redis-server --loglevel warning --requirepass emlnbHUK
   newsfeeder:
     build: .
     command: |
@@ -17,10 +15,8 @@ services:
     ports:
       - "30005:30005"
     environment:
-      - POSTGRES_NAME=postgres
-      - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=postgres
       - SERVICE_PORT=30005
+      - REDIS_URL=cache
+      - REDIS_PASSWORD=emlnbHUK
     depends_on:
-      db:
-        condition: service_healthy
+      - cache
