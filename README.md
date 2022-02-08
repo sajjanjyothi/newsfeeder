@@ -27,6 +27,11 @@ To get uk news
 curl -X GET http://127.0.0.1:30005/api/newsfeeder/v1/news/uk  -H "Authorization: Bearer ziglu" -H 'accept: application/json' 
 ```
 
+To update URL for category
+```
+curl -X PUT -H 'Content-Type:application/json' --data  '{"category":"uk","url":"https://feeds.skynews.com/feeds/rss/uk.xml"}' -H "Authorization: Bearer ziglu" http://127.0.0.1:30005/api/newsfeeder/v1/news
+```
+
 To get all configured urls for categories
 ```
 curl -X GET http://127.0.0.1:30005/api/newsfeeder/v1/news/urls   -H "Authorization: Bearer ziglu" -H 'accept: application/json'
