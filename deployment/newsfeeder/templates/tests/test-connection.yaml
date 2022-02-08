@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "newsfeeder.fullname" . }}-test-connection"
+  labels:
+    {{- include "newsfeeder.labels" . | nindent 4 }}
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args: ['{{ include "newsfeeder.fullname" . }}:{{ .Values.service.port }}']
+  restartPolicy: Never

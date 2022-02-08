@@ -1,0 +1,39 @@
+openapi: "3.0.3"
+info:
+  version: 1.0.0
+  title: newsfeed
+components:
+  securitySchemes:
+    BasicAuth:
+      type: http
+      scheme: basic
+security:
+- BasicAuth: []
+paths:
+  /api/newsfeeder/v1/news/{category}:
+    parameters:
+      -   name: category
+          in: path
+          required: true
+          schema:
+            type: "string"
+    get:
+      tags: ["news"]
+      operationId: getnewsbycategory
+      summary: "Get all news by category (uk/technology)"
+      responses:
+          '200':
+            description: |-
+              200 response
+            content:
+              application/json:
+                schema:
+                  type: array
+                  items:
+                    type: object
+          '4XX':
+            description: |-
+              4XX response
+          '5XX':
+            description: |-
+              4XX response
