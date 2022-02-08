@@ -10,7 +10,7 @@ docker-compose up --build
 API's can be found in api/news.yaml in Open API spec 3 version, Which can be viewed on any API viewer 
 
 # Authentication scheme for API
-At the moment it supports bearer authentication which is exposed as environment variable in docker-compose 
+At the moment it supports bearer authentication which is exposed as environment variable in docker-compose , This can be changed to vault or secrets within kubernetes cluster
 
 # API Examples
 
