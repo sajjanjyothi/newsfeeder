@@ -32,6 +32,13 @@ To get all configured urls for categories
 curl -X GET http://127.0.0.1:30005/api/newsfeeder/v1/news/urls   -H "Authorization: Bearer ziglu" -H 'accept: application/json'
 ```
 
+# Tests
+Tests can be initiated as
+
+```
+make test 
+```
+
 # Helm charts for deployment
 Can be improved and changed according to cluster configuration
 
