@@ -4,7 +4,6 @@ package newsfetcher
 import (
 	"github.com/mmcdole/gofeed"
 	"github.com/sajjanjyothi/ziglunews/envloader"
-	"github.com/sajjanjyothi/ziglunews/redishelper"
 	log "github.com/sirupsen/logrus"
 )
 
@@ -22,15 +21,9 @@ func New(env *envloader.ENV) *newsfetcher {
 	}
 }
 
-func (fetcher *newsfetcher) GetFeed(category string) ([]*gofeed.Item, error) {
-	redis := redishelper.New(fetcher.env)
-	defer redis.Close()
-	URL, err := redis.GetValue(category)
-	if err != nil {
-		return nil, err
-	}
+func (fetcher *newsfetcher) GetFeed(url string) ([]*gofeed.Item, error) {
 	fp := gofeed.NewParser()
-	feed, err := fp.ParseURL(URL)
+	feed, err := fp.ParseURL(url)
 	if err != nil {
 		log.Error(err)
 		return nil, err

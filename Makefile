@@ -15,6 +15,6 @@ deploy:
 	 helm upgrade --install $(RELEASE) \
 		deployment/newsfeeder
 test:
-	go test ./...
+	go test -cover ./...
 clean:
 	rm -rf bin

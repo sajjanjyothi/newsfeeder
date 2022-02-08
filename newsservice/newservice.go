@@ -15,18 +15,25 @@ import (
 type NewsService struct {
 	env         *envloader.ENV
 	newsfetcher newsfetcher.NewsFetcher
+	redis       redishelper.RedisHelperImpl
 }
 
 func New(env *envloader.ENV) *NewsService {
 	return &NewsService{
 		env:         env,
 		newsfetcher: newsfetcher.New(env),
+		redis:       redishelper.New(env),
 	}
 }
 
 func (service *NewsService) Getnewsbycategory(ctx echo.Context, category string) error {
 	newsfetcher := newsfetcher.New(service.env)
-	news, err := newsfetcher.GetFeed(category)
+	url, err := service.redis.GetValue(category)
+	if err != nil {
+		log.Error(err)
+		return ctx.String(http.StatusInternalServerError, err.Error())
+	}
+	news, err := newsfetcher.GetFeed(url)
 	if err != nil {
 		log.Error(err)
 		return ctx.String(http.StatusInternalServerError, err.Error())
@@ -39,18 +46,14 @@ func (service *NewsService) Updatenewsurl(ctx echo.Context) error {
 	if err := ctx.Bind(updateBody); err != nil {
 		return ctx.String(http.StatusInternalServerError, err.Error())
 	}
-	redis := redishelper.New(service.env)
-	defer redis.Close()
-	if err := redis.SetValue(*updateBody.Category, *updateBody.Url); err != nil {
+	if err := service.redis.SetValue(*updateBody.Category, *updateBody.Url); err != nil {
 		return ctx.String(http.StatusInternalServerError, err.Error())
 	}
 	return ctx.String(http.StatusOK, "updated")
 }
 
 func (service *NewsService) Geturls(ctx echo.Context) error {
-	redis := redishelper.New(service.env)
-	defer redis.Close()
-	all, err := redis.GetAll()
+	all, err := service.redis.GetAll()
 	if err != nil {
 		return ctx.String(http.StatusNotFound, err.Error())
 	}

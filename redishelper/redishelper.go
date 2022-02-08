@@ -1,3 +1,4 @@
+//Responsible for interacting with redis
 package redishelper
 
 import (
@@ -11,6 +12,12 @@ type RedisHelper struct {
 	connection redis.Conn
 }
 
+type RedisHelperImpl interface {
+	SetValue(key string, value string) error
+	GetValue(key string) (string, error)
+	Close() error
+	GetAll() ([]URLS, error)
+}
 type URLS struct {
 	Category string
 	URL      string
