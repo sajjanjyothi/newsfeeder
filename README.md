@@ -2,7 +2,7 @@
 Service for providing news on various categories such as uk/technology from external sources
 
 # How to run 
-Service can be launched with docker compose as
+Service can be launched with **docker compose** as
 
 docker-compose up --build
 
