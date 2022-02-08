@@ -44,9 +44,11 @@ func (service *NewsService) Getnewsbycategory(ctx echo.Context, category string)
 func (service *NewsService) Updatenewsurl(ctx echo.Context) error {
 	updateBody := &newsfeeder.UpdatenewsurlJSONBody{}
 	if err := ctx.Bind(updateBody); err != nil {
+		log.Error(err)
 		return ctx.String(http.StatusInternalServerError, err.Error())
 	}
 	if err := service.redis.SetValue(*updateBody.Category, *updateBody.Url); err != nil {
+		log.Error(err)
 		return ctx.String(http.StatusInternalServerError, err.Error())
 	}
 	return ctx.String(http.StatusOK, "updated")
@@ -55,6 +57,7 @@ func (service *NewsService) Updatenewsurl(ctx echo.Context) error {
 func (service *NewsService) Geturls(ctx echo.Context) error {
 	all, err := service.redis.GetAll()
 	if err != nil {
+		log.Error(err)
 		return ctx.String(http.StatusNotFound, err.Error())
 	}
 
