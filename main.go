@@ -2,6 +2,7 @@ package main
 
 import (
 	"errors"
+	"strings"
 
 	echo "github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -47,9 +48,16 @@ func main() {
 	}
 	newsService := newsservice.New(&env)
 	e := echo.New()
-	e.Use(middleware.KeyAuth(func(key string, c echo.Context) (bool, error) {
-		return key == env.NewsFedderToken, nil
+	e.Use(middleware.KeyAuthWithConfig(middleware.KeyAuthConfig{
+		Skipper: func(c echo.Context) bool {
+			return strings.Contains(c.Path(), "swagger")
+		},
+		Validator: func(key string, c echo.Context) (bool, error) {
+			return key == env.NewsFedderToken, nil
+		},
 	}))
+	e.File("/swagger", "/app/api-viewer.html")
+	e.File("/swagger/news.yaml", "/app/news.yaml")
 	newsfeeder.RegisterHandlers(e, newsService)
 	log.Info("Web server starting")
 	log.Fatal(e.Start(":" + env.ServicePort))
